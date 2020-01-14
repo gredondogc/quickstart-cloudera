@@ -87,7 +87,7 @@
                 "m4.xlarge",
                 "m4.large"
             ],
-            "Default": "m4.large",
+            "Default": "t2.small",
             "Description": "Amazon EC2 instance type for the ClusterLauncher Instance.",
             "Type": "String"
         },
@@ -123,7 +123,7 @@
         "QSS3BucketName": {
             "AllowedPattern": "^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$",
             "ConstraintDescription": "AWS Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
-            "Default": "aws-quickstart",
+            "Default": "gr-aws-quickstart",
             "Description": "S3 bucket name for the AWS Quick Start assets. AWS Quick Start bucket name can include numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen (-).",
             "Type": "String"
         },

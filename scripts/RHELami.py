@@ -41,9 +41,9 @@ def main():
     region = args.region
     ami_type = args.type
 
-    ami_name = 'RHEL-'+ version + "*" + "-x86_64*";
+    ami_name = 'CentOS Linux 7 x86_64 HVM EBS' + "*"
 
-    cmd = aws_cmd + " ec2 describe-images --filters \"Name=name,Values=AMI-PLACEHOLDER\" \"Name=virtualization-type,Values=VTYPE-PLACEHOLDER\" --owners 309956199498 --region REGION-PLACEHOLDER"
+    cmd = aws_cmd + " ec2 describe-images --filters \"Name=name,Values=AMI-PLACEHOLDER\" \"Name=virtualization-type,Values=VTYPE-PLACEHOLDER\" --owners aws-marketplace --region REGION-PLACEHOLDER"
     cmd = cmd.replace('AMI-PLACEHOLDER',ami_name)
     cmd = cmd.replace('VTYPE-PLACEHOLDER',ami_type)
     cmd = cmd.replace('REGION-PLACEHOLDER',region)
@@ -51,10 +51,9 @@ def main():
     output = exe_cmd(cmd)
     images = output['out']
     val = json.loads(images)
-    images =  val['Images']
-    sorted_images = sorted(images,key = get_creationdate,reverse=True)
+    images = val['Images']
+    sorted_images = sorted(images, key=get_creationdate,reverse=True)
     print sorted_images[0]['ImageId']
-
 
 
 if __name__ == "__main__":

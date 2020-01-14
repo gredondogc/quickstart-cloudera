@@ -51,7 +51,7 @@ provider {
     # See: http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Subnets.html
     #
 
-    subnetId: subnet-REPLACE-ME
+    subnetId: subnetId-REPLACE-ME
 
     #
     # Comma separated list of security group IDs
@@ -59,7 +59,7 @@ provider {
     #
     # Default security group
 
-    securityGroupsIds: sg-REPLACE-ME
+    securityGroupsIds: securityGroupsIds-REPLACE-ME
 
     #
     # A prefix that Cloudera Director should use when naming the instances (this is not part of the hostname)
@@ -94,6 +94,10 @@ provider {
 
     # associatePublicIpAddresses: true
 
+    # Spot Bid (in USD per hour) for Spot instances
+    # See: http://aws.amazon.com/ec2/spot/
+    # Can be set here and shared across instance groups, and/or overridden/set per instance group
+    # spotBidUSDPerHr: 0.50
 }
 
 #
@@ -101,8 +105,8 @@ provider {
 #
 
 ssh {
-    username: centos # for RHEL image
-    privateKey: REPLACE-ME # with an absolute path to .pem file
+    username: ec2-user # for RHEL image
+    privateKey: privateKey-REPLACE-ME # with an absolute path to .pem file
 }
 
 #
@@ -137,7 +141,7 @@ instances {
       owner: ${?USER}
     }
 
-    bootstrapScript: """#!/bin/sh
+    bootstrapScript: [ """#!/bin/sh
 
 # This is an embedded bootstrap script that runs as root and can be used to customize
 # the instances immediately after boot and before any other Cloudera Director action
@@ -147,7 +151,7 @@ instances {
 echo 'Hello World!'
 exit 0
 
-"""
+""" ]
 
     #
     # Flag indicating whether to normalize the instance. Not setting normalization here implies that your
@@ -677,6 +681,47 @@ cluster {
       #   }
       # }
     }
+
+    # Spot instance group configuration
+    # See: http://www.cloudera.com/documentation/director/latest/topics/director_aws_using_spot_instances.html
+    # workers-spot {
+    #   count: 3
+    #   #
+    #   # Minimum number of instances required to set up the cluster.
+    #   # Fail and quit if minCount number of instances is not available in this cloud
+    #   # environment. Else, continue setting up the cluster.
+    #   #
+    #   # For a group using Spot instances, minCount should always be 0.
+    #   minCount: 0
+
+    #   instance: ${instances.c44x} {
+
+    #     # Put all cluster nodes in a placement group for improved network performance
+    #     # Note: this only works for a limited set of instances
+    #     # http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/placement-groups.html
+
+    #     # placementGroup: REPLACE-ME
+
+    #     # sshUsername: centos # May vary by image
+
+    #     useSpotInstances: true
+    #     # spotBidUSDPerHr: 0.50 # Can be set/overridden per instance group
+
+    #     tags {
+    #       group: worker-spot
+    #     }
+    #   }
+
+    #   # Only stateless roles can be used with Spot instances
+    #   roles {
+    #     YARN: [NODEMANAGER]
+    #   }
+
+    #   # Optional custom role configurations
+    #   # Configuration keys containing periods must be enclosed in double quotes.
+    #   # configs {
+    #   # }
+    # }
 
     gateways {
       count: 1

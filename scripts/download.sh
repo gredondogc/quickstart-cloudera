@@ -29,7 +29,7 @@ done
 
 
 
-VERSION=2.1.0
+VERSION=6.3.0
 BUILDBUCKET=$(echo ${BUILDBUCKET} | sed 's/"//g')
 
 
@@ -42,43 +42,47 @@ yum -y install ntp
 service ntpd start
 ntpdate  -u 0.amazon.pool.ntp.org
 
-mkdir -p /home/ec2-user/cloudera/misc/
-mkdir -p /home/ec2-user/cloudera/aws
+yum -y install vim nano
+
+mkdir -p /home/centos/cloudera/misc/
+mkdir -p /home/centos/cloudera/aws
 
 # New! 1.5.1!
-mkdir -p /home/ec2-user/cloudera/setup-default
-cd /home/ec2-user/cloudera
+mkdir -p /home/centos/cloudera/setup-default
+cd /home/centos/cloudera
 unzip  setup-default.zip
 
-export DIRECTOR_LATEST_VERSION=2.1.0
-AWS_SIMPLE_CONF=/home/ec2-user/cloudera/setup-default/aws.simple.conf
-AWS_REFERENCE_CONF=/home/ec2-user/cloudera/setup-default/aws.reference.conf
+export DIRECTOR_LATEST_VERSION=6.3.0
+AWS_SIMPLE_CONF=/home/centos/cloudera/setup-default/aws.simple.conf
+AWS_REFERENCE_CONF=/home/centos/cloudera/setup-default/aws.reference.conf
 wget https://s3.amazonaws.com/${BUILDBUCKET}media/aws.simple.conf.${DIRECTOR_LATEST_VERSION} --output-document=${AWS_SIMPLE_CONF}
 wget https://s3.amazonaws.com/${BUILDBUCKET}media/aws.reference.conf.${DIRECTOR_LATEST_VERSION} --output-document=${AWS_REFERENCE_CONF}
 
 for f in RHELami.py
 do
-   wget https://s3.amazonaws.com/${BUILDBUCKET}scripts/$f --output-document=/home/ec2-user/cloudera/misc/$f
+   wget https://s3.amazonaws.com/${BUILDBUCKET}scripts/$f --output-document=/home/centos/cloudera/misc/$f
 done
 
 
-wget https://s3.amazonaws.com/aws-cli/awscli-bundle.zip --output-document=/home/ec2-user/cloudera/aws/awscli-bundle.zip
-wget https://s3.amazonaws.com/${BUILDBUCKET}media/jq --output-document=/home/ec2-user/cloudera/aws/jq
-wget https://s3.amazonaws.com/${BUILDBUCKET}media/setup-default.zip --output-document=/home/ec2-user/cloudera/setup-default.zip
+wget https://s3.amazonaws.com/aws-cli/awscli-bundle.zip --output-document=/home/centos/cloudera/aws/awscli-bundle.zip
+wget https://s3.amazonaws.com/${BUILDBUCKET}media/jq --output-document=/home/centos/cloudera/aws/jq
+wget https://s3.amazonaws.com/${BUILDBUCKET}media/setup-default.zip --output-document=/home/centos/cloudera/setup-default.zip
 
-cd /home/ec2-user/cloudera/aws
+cd /home/centos/cloudera/aws
 unzip awscli-bundle.zip
 ./awscli-bundle/install -i /usr/local/aws -b /usr/local/bin/aws
-cd /home/ec2-user/cloudera/aws
+cd /home/centos/cloudera/aws
 chmod 755 ./jq
-export JQ_COMMAND=/home/ec2-user/cloudera/aws/jq
+export JQ_COMMAND=/home/centos/cloudera/aws/jq
 export AWS_INSTANCE_IAM_ROLE=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/)
 export AWS_ACCESSKEYID=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/${AWS_INSTANCE_IAM_ROLE} | ${JQ_COMMAND} '.AccessKeyId'  | sed 's/^"\(.*\)"$/\1/')
 export AWS_SECRETACCESSKEY=$(curl -s http://169.254.169.254/latest/meta-data/iam/security-credentials/${AWS_INSTANCE_IAM_ROLE} | ${JQ_COMMAND} '.SecretAccessKey' | sed 's/^"\(.*\)"$/\1/')
 export AWS_DEFAULT_REGION=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | ${JQ_COMMAND} '.region'  | sed 's/^"\(.*\)"$/\1/')
 export AWS_INSTANCEID=$(curl -s http://169.254.169.254/latest/dynamic/instance-identity/document | ${JQ_COMMAND} '.instanceId' | sed 's/^"\(.*\)"$/\1/' )
-export RHEL_VERSION_HVM=7.1
-export AWS_HVM_AMI=$(/usr/bin/python /home/ec2-user/cloudera/misc/RHELami.py -v ${RHEL_VERSION_HVM} -r ${AWS_DEFAULT_REGION} -t hvm)
+export RHEL_VERSION_HVM='7.3'
+
+# TO_DO comparar com davidlu
+export AWS_HVM_AMI=$(/usr/bin/python /home/centos/cloudera/misc/RHELami.py -v ${RHEL_VERSION_HVM} -r ${AWS_DEFAULT_REGION} -t hvm)
 
 # Replace these via CloudFormation User-Data
 export AWS_SUBNETID=SUBNETID-CFN-REPLACE
@@ -178,17 +182,18 @@ do
 done
 
 # change ownership
-chown -R ec2-user /home/ec2-user/cloudera
+chown -R centos /home/centos/cloudera
 
-export INSTANCEKEYPAIR=/home/ec2-user/cloudera-aws-quickstart-${CURRENT_DATE}.pem
+export INSTANCEKEYPAIR=/home/centos/cloudera-aws-quickstart-${CURRENT_DATE}.pem
 export INSTANCEKEYPAIRESC=\\/home\\/ec2\\-user\\/cloudera\\-aws\\-quickstart\\-${CURRENT_DATE}\\.pem
 
 
 # Pull bits from Cloudera repo
-DIRECTOR_VERSION='2.5.0-1.director250.p0.21.el7'
-yum-config-manager --add-repo http://archive.cloudera.com/director/redhat/7/x86_64/director/cloudera-director.repo
+DIRECTOR_VERSION='6.3.0-12.el7'
+
+yum-config-manager --add-repo https://archive.cloudera.com/director6/6.3/redhat7/cloudera-director.repo
 # Edit cloudera director repo file
-awk 'NR==4 {$0="baseurl=http://archive.cloudera.com/director/redhat/7/x86_64/director/2.5.0/"} { print }' /etc/yum.repos.d/cloudera-director.repo > /etc/yum.repos.d/cloudera-director.repo1
+awk 'NR==4 {$0="baseurl=https://archive.cloudera.com/director6/6.3.0/redhat7/"} { print }' /etc/yum.repos.d/cloudera-director.repo > /etc/yum.repos.d/cloudera-director.repo1
 rm -f /etc/yum.repos.d/cloudera-director.repo
 mv /etc/yum.repos.d/cloudera-director.repo1 /etc/yum.repos.d/cloudera-director.repo
 yum clean all
@@ -204,7 +209,7 @@ yum install -y cloudera-director-server-${DIRECTOR_VERSION} cloudera-director-cl
                                         --region ${AWS_DEFAULT_REGION} \
                                         | ${JQ_COMMAND} -r ".KeyMaterial"  > ${INSTANCEKEYPAIR}
 
-chown ec2-user:ec2-user ${INSTANCEKEYPAIR}
+chown centos:centos ${INSTANCEKEYPAIR}
 
 for AWS_CONF_FILE in ${AWS_SIMPLE_CONF} ${AWS_REFERENCE_CONF}
 do
@@ -219,23 +224,23 @@ wget https://bootstrap.pypa.io/get-pip.py
 python get-pip.py
 pip install boto
 
-cd /home/ec2-user/cloudera
+cd /home/centos/cloudera
 unzip  setup-default.zip
-cd /home/ec2-user/cloudera/setup-default
+cd /home/centos/cloudera/setup-default
 pip install setuptools --upgrade
 pip install virtualenv
 pip install -r requirements.txt
 
 
-wget https://s3.amazonaws.com/${BUILDBUCKET}scripts/setupdefaults.sh --output-document=/home/ec2-user/cloudera/setup-default/setupdefaults.sh
+wget https://s3.amazonaws.com/${BUILDBUCKET}scripts/setupdefaults.sh --output-document=/home/centos/cloudera/setup-default/setupdefaults.sh
 
 service cloudera-director-server start
 # Strange issues happen when cloudera-director-server isn't completely started
 /bin/sleep 60
-sh /home/ec2-user/cloudera/setup-default/setupdefaults.sh -t CLUSTERTYPE-REPLACE-ME
+sh /home/centos/cloudera/setup-default/setupdefaults.sh -t CLUSTERTYPE-REPLACE-ME
 
 # cleanup
-for f in /home/ec2-user/cloudera/setup-default.zip
+for f in /home/centos/cloudera/setup-default.zip
 do
     if [ -f "$f" ]; then
       rm -rf "$f"

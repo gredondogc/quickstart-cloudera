@@ -31,7 +31,7 @@ done
 
 [ -z ${CLUSTERTYPE} ] && usage
 
-cd /home/ec2-user/cloudera/setup-default
+cd /home/centos/cloudera/setup-default
 
 if [ ${CLUSTERTYPE} == "Simple" ]
 then
